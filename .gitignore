@@ -1,0 +1,15 @@
+.DS_Store
+.build/
+build/
+dist/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+*.ipa
+*.p12
+*.mobileprovision
+*.xcuserstate
+.env
+.env.*
+*credentials*
+*token*.json

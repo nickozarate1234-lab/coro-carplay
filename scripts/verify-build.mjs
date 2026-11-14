@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+
+const app = path.resolve('build/Build/Products/Release-iphoneos/Coro.app');
+const extension = path.join(app, 'PlugIns/CoroLive.appex');
+const plist = (directory, key) => execFileSync('/usr/libexec/PlistBuddy', ['-c', `Print :${key}`, path.join(directory, 'Info.plist')], { encoding: 'utf8' }).trim();
+assert(fs.existsSync(path.join(app, 'Coro')));
+assert(fs.existsSync(path.join(extension, 'CoroLive')));
+assert(fs.existsSync(path.join(app, 'silence.wav')));
+assert.equal(plist(app, 'CFBundleIdentifier'), 'org.proyectocoro.app');
+assert.equal(plist(extension, 'CFBundleIdentifier'), 'org.proyectocoro.app.live');
+assert.equal(plist(extension, 'NSExtension:NSExtensionPointIdentifier'), 'com.apple.widgetkit-extension');
+assert.equal(plist(app, 'NSSupportsLiveActivities'), 'true');
+assert.equal(plist(app, 'UIBackgroundModes:0'), 'audio');
+assert(Number(plist(app, 'MinimumOSVersion')) >= 26);
+assert.match(plist(app, 'CoroProjectURL'), /^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/);
+assert.match(execFileSync('lipo', ['-info', path.join(app, 'Coro')], { encoding: 'utf8' }), /arm64/);
+console.log('Build arm64 verificado: app, extensión, recursos y configuración. Falta la prueba física de CarPlay.');
