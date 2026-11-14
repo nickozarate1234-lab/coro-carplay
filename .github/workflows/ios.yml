@@ -1,0 +1,88 @@
+name: Compilar Coro gratis
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coro-ios
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # A public repository is required to avoid metered private macOS compute.
+    # No job is started if this workflow is copied into a private repository.
+    if: ${{ github.event.repository.private == false }}
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Importar codigo inicial si existe el paquete
+        shell: bash
+        run: |
+          if [ -f source-bundle.json ]; then
+            node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const files = JSON.parse(fs.readFileSync('source-bundle.json', 'utf8'));
+          const roots = new Set(['App', 'Shared', 'Widget', 'Sources', 'Tests', 'scripts', 'docs']);
+          const topFiles = new Set(['.gitignore', 'Package.swift', 'project.yml', 'README.md', 'STATUS.md']);
+          for (const file of files) {
+            const p = file.path;
+            if (typeof p !== 'string' || typeof file.content !== 'string' ||
+                p.includes('\\') || p.split('/').some(s => !s || s === '..' || s === '.') ||
+                (!topFiles.has(p) && !roots.has(p.split('/')[0]))) throw new Error('Invalid source path');
+            fs.mkdirSync(path.dirname(p), { recursive: true });
+            fs.writeFileSync(p, file.content);
+          }
+          NODE
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add App Shared Widget Sources Tests scripts docs .gitignore Package.swift project.yml README.md STATUS.md
+            git rm source-bundle.json
+            git commit -m 'Import Coro source files for review and development'
+            git push origin HEAD:main
+          fi
+      - name: Elegir Xcode 26.3
+        run: |
+          test -d /Applications/Xcode_26.3.app
+          echo 'DEVELOPER_DIR=/Applications/Xcode_26.3.app/Contents/Developer' >> "$GITHUB_ENV"
+      - name: Pruebas del motor
+        run: swift test
+      - name: Generar recursos y comprobar el proyecto
+        run: |
+          node scripts/generate-resources.mjs
+          node scripts/validate.mjs
+      - name: Preparar XcodeGen
+        run: |
+          command -v xcodegen >/dev/null || brew install xcodegen
+          xcodegen generate
+      - name: Compilar para iPhone sin certificado
+        run: |
+          set -o pipefail
+          xcodebuild -project Coro.xcodeproj -scheme Coro \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' CORO_PROJECT_URL="https://github.com/$GITHUB_REPOSITORY" \
+            build | tee build-output.log
+      - name: Comprobar y empaquetar
+        run: |
+          node scripts/verify-build.mjs
+          mkdir -p dist/Payload
+          cp -R build/Build/Products/Release-iphoneos/Coro.app dist/Payload/
+          cd dist
+          ditto -c -k --keepParent Payload Coro-unsigned.ipa
+          shasum -a 256 Coro-unsigned.ipa > SHA256.txt
+          test "$(stat -f%z Coro-unsigned.ipa)" -lt 26214400
+      - name: Guardar instalador como borrador de release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          build_tag="coro-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gh release create "$build_tag" dist/Coro-unsigned.ipa dist/SHA256.txt \
+            --draft --target "$(git rev-parse HEAD)" --title "Coro personal · build ${GITHUB_RUN_NUMBER}" \
+            --notes-file docs/build-notes.md
+          test "$(gh release view "$build_tag" --json isDraft --jq .isDraft)" = true
+          gh release view "$build_tag" --json url --jq .url >> "$GITHUB_STEP_SUMMARY"
