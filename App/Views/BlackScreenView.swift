@@ -11,6 +11,6 @@ struct BlackScreenView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Salir de la pantalla negra y volver a Coro")
             .accessibilityAddTraits(.isButton)
-            .accessibilityAction(onExit)
+            .accessibilityAction(.default) { onExit() }
     }
 }
