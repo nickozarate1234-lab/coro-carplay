@@ -38,7 +38,7 @@ struct SettingsView: View {
                     Toggle("Mantener la sesión activa", isOn: $session.keepAlive).disabled(session.running)
                     Text("Esta versión personal reproduce silencio local mezclado con Spotify para intentar mantener las letras activas al bloquear el iPhone. Puede consumir batería y requiere probarse en tu equipo. Cambia esta opción con la sesión detenida.")
                         .font(.footnote).foregroundStyle(.secondary)
-                    Text("La sesión termina al desconectar CarPlay, tras dos minutos sin reproducción o si iOS indica temperatura alta.")
+                    Text("La sesión termina al desconectar CarPlay o tras dos minutos sin reproducción.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
 
@@ -60,7 +60,7 @@ struct SettingsView: View {
                     Link("Fuente de letras: LRCLIB", destination: URL(string: "https://lrclib.net/")!)
                 }
                 Section {
-                    Text("Coro 0.1 · Prototipo para uso personal. No está afiliado a Spotify ni a Apple.")
+                    Text("Coro 0.1.1 · Prototipo para uso personal. No está afiliado a Spotify ni a Apple.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }

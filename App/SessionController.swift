@@ -57,11 +57,6 @@ final class SessionController: ObservableObject {
         starting = true
         defer { starting = false }
         message = nil
-        let heat = ProcessInfo.processInfo.thermalState
-        guard heat != .serious, heat != .critical else {
-            message = "El iPhone está caliente. Deja que se enfríe antes de iniciar Coro."
-            return
-        }
         do {
             if keepAlive { try background.start() }
             try await live.start(demo: demo)
@@ -265,13 +260,6 @@ final class SessionController: ObservableObject {
                 guard let self, self.running,
                       !AVAudioSession.sharedInstance().currentRoute.outputs.contains(where: { $0.portType == .carAudio }) else { return }
                 self.stop(reason: "CarPlay desconectado. Sesión terminada.")
-            }
-        })
-        observers.append(center.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in
-                let heat = ProcessInfo.processInfo.thermalState
-                guard let self, self.running, heat == .serious || heat == .critical else { return }
-                self.stop(reason: "Coro se detuvo porque el iPhone está caliente.")
             }
         })
     }
