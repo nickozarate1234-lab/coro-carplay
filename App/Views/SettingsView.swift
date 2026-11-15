@@ -34,9 +34,16 @@ struct SettingsView: View {
                     Button("Restablecer a cero") { session.offset = 0 }
                 }
 
-                Section("Pantalla bloqueada") {
+                Section("Pantalla negra") {
+                    Text("Inicia las letras y pulsa Pantalla negra en la pantalla principal. Coro bajará el brillo y evitará el bloqueo automático mientras este modo esté activo. El iPhone sigue desbloqueado.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Text("Toca dos veces para volver. Al salir del modo, cambiar de app o terminar la sesión se restauran el brillo y el bloqueo automático anteriores.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+
+                Section("Segundo plano experimental") {
                     Toggle("Mantener la sesión activa", isOn: $session.keepAlive).disabled(session.running)
-                    Text("Esta versión personal reproduce silencio local mezclado con Spotify para intentar mantener las letras activas al bloquear el iPhone. Puede consumir batería y requiere probarse en tu equipo. Cambia esta opción con la sesión detenida.")
+                    Text("Reproduce silencio local mezclado con Spotify para intentar mantener Coro activo fuera de la app. No garantiza que las letras avancen con el iPhone bloqueado. Pantalla negra no necesita esta opción. Cámbiala con la sesión detenida.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Text("La sesión termina al desconectar CarPlay o tras dos minutos sin reproducción.")
                         .font(.footnote).foregroundStyle(.secondary)
@@ -60,7 +67,7 @@ struct SettingsView: View {
                     Link("Fuente de letras: LRCLIB", destination: URL(string: "https://lrclib.net/")!)
                 }
                 Section {
-                    Text("Coro 0.1.1 · Prototipo para uso personal. No está afiliado a Spotify ni a Apple.")
+                    Text("Coro 0.1.2 · Prototipo para uso personal. No está afiliado a Spotify ni a Apple.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }

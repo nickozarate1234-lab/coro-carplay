@@ -50,7 +50,38 @@ struct LyricsCard: View {
     private let coral = Color(red: 1, green: 0.52, blue: 0.39)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: family == .small ? 5 : 8) {
+        if family == .small {
+            // CarPlay has very little height. Give it all to the current lyric.
+            ViewThatFits(in: .vertical) {
+                compactLyric(size: 18)
+                compactLyric(size: 16)
+                compactLyric(size: 14)
+                Text(visibleLine)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.85)
+            }
+            .foregroundStyle(coral)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding(6)
+        } else {
+            fullCard
+        }
+    }
+
+    private var visibleLine: String {
+        context.isStale ? "Esperando a Spotify…" : context.state.line
+    }
+
+    private func compactLyric(size: CGFloat) -> some View {
+        Text(visibleLine)
+            .font(.system(size: size, weight: .bold, design: .rounded))
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var fullCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 5) {
                 Image(systemName: "music.note").foregroundStyle(coral)
                 Text(context.state.isDemo ? "DEMO" : context.state.title).lineLimit(1)
@@ -58,21 +89,21 @@ struct LyricsCard: View {
                 if !context.state.isPlaying { Image(systemName: "pause.fill") }
             }
             .font(.caption2.weight(.semibold)).foregroundStyle(.white.opacity(0.65))
-            Text(context.isStale ? "Esperando a Spotify…" : context.state.line)
-                .font(family == .small ? .system(size: 18, weight: .bold, design: .rounded) : .title3.weight(.semibold))
+            Text(visibleLine)
+                .font(.title3.weight(.semibold))
                 .foregroundStyle(coral)
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if !context.isStale, !context.state.nextLine.isEmpty {
                 Text(context.state.nextLine)
-                    .font(family == .small ? .caption2 : .subheadline)
+                    .font(.subheadline)
                     .foregroundStyle(.white.opacity(0.6)).lineLimit(1)
             }
-            if family != .small, !context.state.notice.isEmpty {
+            if !context.state.notice.isEmpty {
                 Text(context.state.notice).font(.caption2).foregroundStyle(.white.opacity(0.5)).lineLimit(1)
             }
         }
-        .padding(family == .small ? 9 : 16)
+        .padding(16)
     }
 }

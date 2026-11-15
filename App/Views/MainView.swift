@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 enum CoroStyle {
     static let accent = Color(red: 1, green: 0.47, blue: 0.34)
@@ -10,8 +11,37 @@ struct MainView: View {
     @ObservedObject var session: SessionController
     @ObservedObject var auth: SpotifyAuth
     @State private var settings = false
+    @StateObject private var blackScreen = BlackScreenController()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
+        ZStack {
+            if blackScreen.isEnabled {
+                BlackScreenView(onExit: blackScreen.disable)
+            } else {
+                mainContent
+            }
+        }
+        .statusBarHidden(blackScreen.isEnabled)
+        .persistentSystemOverlays(blackScreen.isEnabled ? .hidden : .automatic)
+        .sheet(isPresented: $settings) { SettingsView(session: session, auth: auth) }
+        .sheet(item: $auth.page, onDismiss: { auth.dismissAuthorization() }) { page in
+            SafariView(url: page.url).ignoresSafeArea()
+        }
+        .onChange(of: session.running) { _, running in
+            if !running { blackScreen.disable() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { blackScreen.disable() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            // Restore immediately, including before a manual lock or app switch.
+            blackScreen.disable()
+        }
+        .onDisappear { blackScreen.disable() }
+    }
+
+    private var mainContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 HStack(alignment: .center) {
@@ -66,10 +96,18 @@ struct MainView: View {
 
                 VStack(spacing: 12) {
                     if session.running {
+                        Button { blackScreen.enable() } label: {
+                            Label("Pantalla negra", systemImage: "moon.fill")
+                                .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        }
+                        .buttonStyle(.borderedProminent).controlSize(.large).foregroundStyle(.black)
+                        Text("Deja Coro abierto y el iPhone desbloqueado. No pulses el botón lateral. Toca dos veces la pantalla negra para volver; se restaurará el brillo anterior.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         Button { session.stop() } label: {
                             Label("Detener sesión", systemImage: "stop.fill").frame(maxWidth: .infinity).padding(.vertical, 10)
                         }
-                        .buttonStyle(.borderedProminent).controlSize(.large).foregroundStyle(.black)
+                        .buttonStyle(.bordered).controlSize(.large)
                     } else if auth.isConnected {
                         Button { Task { await session.start() } } label: {
                             Label(session.starting ? "Preparando…" : "Iniciar letras", systemImage: "play.fill")
@@ -107,7 +145,7 @@ struct MainView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Label("En CarPlay", systemImage: "car.side").font(.subheadline.weight(.semibold))
-                    Text("Inicia la sesión, conecta el iPhone y abre el panel de CarPlay. La tarjeta de letras aparece como una Actividad en vivo. Puedes bloquear el teléfono.")
+                    Text("Inicia la sesión, abre el panel de CarPlay y activa Pantalla negra en Coro. La letra permanece junto a las otras apps del panel. Mantén Coro abierto: bloquear el iPhone o cambiar de app puede congelar las letras.")
                         .font(.footnote).foregroundStyle(.secondary)
                     Text("Letras: LRCLIB · La disponibilidad depende de cada canción.")
                         .font(.caption2).foregroundStyle(.secondary)
@@ -117,9 +155,5 @@ struct MainView: View {
             .padding(24)
         }
         .background(CoroStyle.background)
-        .sheet(isPresented: $settings) { SettingsView(session: session, auth: auth) }
-        .sheet(item: $auth.page, onDismiss: { auth.dismissAuthorization() }) { page in
-            SafariView(url: page.url).ignoresSafeArea()
-        }
     }
 }

@@ -11,8 +11,8 @@ settings:
     SWIFT_VERSION: "5.0"
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: "0.1.1"
-    CURRENT_PROJECT_VERSION: "2"
+    MARKETING_VERSION: "0.1.2"
+    CURRENT_PROJECT_VERSION: "3"
     IPHONEOS_DEPLOYMENT_TARGET: "26.0"
     GENERATE_INFOPLIST_FILE: NO
 targets:
@@ -30,8 +30,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Coro
-        CFBundleShortVersionString: "0.1.1"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.1.2"
+        CFBundleVersion: "3"
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -65,8 +65,8 @@ targets:
       path: Widget/Info.plist
       properties:
         CFBundleDisplayName: Coro Live
-        CFBundleShortVersionString: "0.1.1"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.1.2"
+        CFBundleVersion: "3"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
